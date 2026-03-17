@@ -108,6 +108,26 @@ export const [AppProvider, useAppState] = createContextHook(() => {
     [loadSites, persistSessionMutation]
   );
 
+  const register = useCallback(
+    async (email: string, password: string) => {
+      const auth = await api.register({ email, password });
+      const profile = await api.getCurrentUser(auth.token);
+
+      const user: SessionUser = {
+        email: profile.email,
+        token: auth.token,
+        organization: 'Capgemini Sustainability',
+        role: profile.role,
+      };
+
+      setSessionUser(user);
+      await persistSessionMutation.mutateAsync(user);
+      await loadSites(user.token);
+      return user;
+    },
+    [loadSites, persistSessionMutation]
+  );
+
   const logout = useCallback(async () => {
     setSessionUser(null);
     setSites([]);
@@ -140,6 +160,32 @@ export const [AppProvider, useAppState] = createContextHook(() => {
       await api.calculateSite(sessionUser.token, createdSite.id).catch(() => null);
       const refreshedSites = await loadSites(sessionUser.token);
       return refreshedSites.find((site) => site.id === String(createdSite.id)) ?? refreshedSites[0];
+    },
+    [loadSites, sessionUser?.token]
+  );
+
+  const updateSite = useCallback(
+    async (siteId: string, values: SiteFormValues) => {
+      if (!sessionUser?.token) {
+        throw new Error('Session expirée. Veuillez vous reconnecter.');
+      }
+      const id = Number(siteId);
+      if (!Number.isFinite(id)) throw new Error('ID de site invalide');
+      await api.updateSite(sessionUser.token, id, toSiteCreatePayload(values));
+      await loadSites(sessionUser.token);
+    },
+    [loadSites, sessionUser?.token]
+  );
+
+  const deleteSite = useCallback(
+    async (siteId: string) => {
+      if (!sessionUser?.token) {
+        throw new Error('Session expirée. Veuillez vous reconnecter.');
+      }
+      const id = Number(siteId);
+      if (!Number.isFinite(id)) throw new Error('ID de site invalide');
+      await api.deleteSite(sessionUser.token, id);
+      await loadSites(sessionUser.token);
     },
     [loadSites, sessionUser?.token]
   );
@@ -182,8 +228,11 @@ export const [AppProvider, useAppState] = createContextHook(() => {
     isHydrated,
     isLoading,
     login,
+    register,
     logout,
     createSite,
+    updateSite,
+    deleteSite,
     seedDefaultSite,
     totals,
   };

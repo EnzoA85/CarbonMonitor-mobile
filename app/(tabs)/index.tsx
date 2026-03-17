@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { BarChart3, Building2, ChevronRight, ShieldCheck } from 'lucide-react-native';
+import { BarChart3, ShieldCheck } from 'lucide-react-native';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -13,25 +13,33 @@ import {
   PrimaryButton,
   ScreenBackground,
   SectionTitle,
+  SimpleBarChart,
   SiteMetaRow,
 } from '@/ui';
 import { theme } from '@/constants/theme';
 import { useAppState } from '@/providers/app-provider';
 import { formatDate, formatKg, formatTonnes } from '@/utils/format';
 
-export default function DashboardScreen() {
-  const { latestSite, sessionUser, sites, totals } = useAppState();
+export default function HomeScreen() {
+  const { latestSite, sessionUser, totals } = useAppState();
+
+  const constructionKg = totals.totalConstructionKg;
+  const operationKg = totals.totalOperationKg;
+  const chartSegments = [
+    { label: 'Construction', value: constructionKg, color: theme.colors.chartA },
+    { label: 'Exploitation', value: operationKg, color: theme.colors.chartB },
+  ];
 
   return (
     <ScreenBackground>
       <SafeAreaView edges={['top']} style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} testID="dashboard-scroll">
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} testID="home-scroll">
           <View style={styles.header}>
             <View style={styles.headerTextWrap}>
-              <Text style={styles.eyebrow}>Pilotage carbone</Text>
-              <Text style={styles.title}>Tableau de bord environnemental</Text>
+              <Text style={styles.eyebrow}>Accueil</Text>
+              <Text style={styles.title}>Tableau de bord carbone</Text>
               <Text style={styles.subtitle}>
-                Visualisez l’empreinte CO2 de vos sites, identifiez les leviers et priorisez vos actions de réduction.
+                Vue d’ensemble des KPI, répartition construction / exploitation et dernier diagnostic.
               </Text>
             </View>
           </View>
@@ -46,9 +54,6 @@ export default function DashboardScreen() {
                   <Text style={styles.heroLabel}>Session active</Text>
                   <Text style={styles.heroValue}>{sessionUser?.organization ?? 'Mode démo'}</Text>
                 </View>
-              </View>
-              <View style={styles.heroPill}>
-                <Text style={styles.heroPillText}>JWT sécurisé</Text>
               </View>
             </View>
 
@@ -68,9 +73,17 @@ export default function DashboardScreen() {
                 value={formatTonnes(totals.totalConstructionKg / 1000)}
               />
             </View>
+
+            <View style={styles.chartSection}>
+              <View style={styles.chartHeader}>
+                <BarChart3 color="rgba(246,243,236,0.9)" size={18} />
+                <Text style={styles.chartTitle}>Répartition des émissions</Text>
+              </View>
+              <SimpleBarChart segments={chartSegments} />
+            </View>
           </PremiumCard>
 
-          <SectionTitle eyebrow="Dernier diagnostic" title="Indicateurs clés" actionLabel="Nouveau" href="/site/new" />
+          <SectionTitle eyebrow="Dernier diagnostic" title="Indicateurs clés" actionLabel="Voir les sites" href="/sites" />
 
           <AlertBanner
             title="Conseil du jour"
@@ -85,7 +98,7 @@ export default function DashboardScreen() {
                   <Text style={styles.siteName}>{latestSite.name}</Text>
                   <SiteMetaRow date={formatDate(latestSite.updatedAt)} location={latestSite.location} />
                 </View>
-                <PrimaryButton label="Voir" onPress={() => router.push(`/site/${latestSite.id}`)} variant="secondary" testId="latest-site-open" />
+                <PrimaryButton label="Voir" onPress={() => router.push(`/site/${latestSite.id}` as const)} variant="secondary" testId="latest-site-open" />
               </View>
 
               <View style={styles.metricRow}>
@@ -123,37 +136,6 @@ export default function DashboardScreen() {
             </PremiumCard>
           )}
 
-          <SectionTitle eyebrow="Portefeuille" title="Sites enregistrés" actionLabel="Historique" href="/history" />
-
-          <View style={styles.listWrap}>
-            {sites.map((site) => (
-              <PremiumCard key={site.id} testId={`site-card-${site.id}`}>
-                <View style={styles.listCardTop}>
-                  <View style={styles.listIcon}><Building2 color={theme.colors.primaryStrong} size={18} /></View>
-                  <View style={styles.listCardBody}>
-                    <Text style={styles.listTitle}>{site.name}</Text>
-                    <Text style={styles.listSubtitle}>{formatTonnes(site.metrics.totalTonnesCo2e)} • {site.input.areaM2} m²</Text>
-                  </View>
-                  <ChevronRight color={theme.colors.textMuted} size={18} />
-                </View>
-                <View style={styles.listActions}>
-                  <PrimaryButton label="Consulter" onPress={() => router.push(`/site/${site.id}`)} variant="secondary" testId={`open-site-${site.id}`} />
-                </View>
-              </PremiumCard>
-            ))}
-          </View>
-
-          <PremiumCard testId="cta-card">
-            <View style={styles.ctaRow}>
-              <View style={styles.ctaIcon}><BarChart3 color={theme.colors.textOnDark} size={20} /></View>
-              <View style={styles.ctaTextWrap}>
-                <Text style={styles.ctaTitle}>Créer un nouveau diagnostic terrain</Text>
-                <Text style={styles.ctaText}>Ajoutez un site, renseignez ses consommations et visualisez les KPI immédiatement.</Text>
-              </View>
-            </View>
-            <PrimaryButton label="Ajouter un site" onPress={() => router.push('/site/new')} icon="plus" testId="new-site-button" />
-          </PremiumCard>
-
           <Accordion
             title="Méthodologie de calcul"
             subtitle="Résumé des indicateurs affichés"
@@ -169,20 +151,14 @@ export default function DashboardScreen() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
+  safeArea: { flex: 1 },
   content: {
     padding: 20,
     gap: 18,
     paddingBottom: 120,
   },
-  header: {
-    gap: 14,
-  },
-  headerTextWrap: {
-    gap: 8,
-  },
+  header: { gap: 14 },
+  headerTextWrap: { gap: 8 },
   eyebrow: {
     color: theme.colors.primary,
     fontSize: 12,
@@ -192,8 +168,8 @@ const styles = StyleSheet.create({
   },
   title: {
     color: theme.colors.text,
-    fontSize: 32,
-    lineHeight: 38,
+    fontSize: 28,
+    lineHeight: 34,
     fontWeight: '800',
   },
   subtitle: {
@@ -236,21 +212,27 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginTop: 2,
   },
-  heroPill: {
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 999,
-  },
-  heroPillText: {
-    color: theme.colors.textOnDark,
-    fontSize: 12,
-    fontWeight: '700',
-  },
   metricRow: {
     flexDirection: 'row',
     gap: 12,
     flexWrap: 'wrap',
+  },
+  chartSection: {
+    marginTop: 8,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.1)',
+    gap: 12,
+  },
+  chartHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  chartTitle: {
+    color: 'rgba(246,243,236,0.9)',
+    fontSize: 14,
+    fontWeight: '700',
   },
   latestHeader: {
     flexDirection: 'row',
@@ -264,66 +246,6 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '800',
     marginBottom: 8,
-  },
-  listWrap: {
-    gap: 12,
-  },
-  listCardTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  listIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors.surfaceMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  listCardBody: {
-    flex: 1,
-    gap: 4,
-  },
-  listTitle: {
-    color: theme.colors.text,
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  listSubtitle: {
-    color: theme.colors.textMuted,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  listActions: {
-    marginTop: 16,
-  },
-  ctaRow: {
-    flexDirection: 'row',
-    gap: 14,
-    marginBottom: 18,
-  },
-  ctaIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: theme.colors.primaryStrong,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ctaTextWrap: {
-    flex: 1,
-    gap: 6,
-  },
-  ctaTitle: {
-    color: theme.colors.text,
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  ctaText: {
-    color: theme.colors.textMuted,
-    fontSize: 14,
-    lineHeight: 20,
   },
   helpText: {
     color: theme.colors.textMuted,

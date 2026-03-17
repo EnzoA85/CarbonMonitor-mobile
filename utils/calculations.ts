@@ -1,3 +1,9 @@
+/**
+ * Calculs locaux utilisés uniquement pour la PRÉVISUALISATION en temps réel
+ * (formulaires site/new et site/edit). Les KPI affichés sur le dashboard,
+ * le détail des sites et l'historique proviennent du backend via
+ * getSiteReport, getSiteMaterials et CarbonResultResponse.
+ */
 import {
   EMPLOYEE_FACTOR,
   ENERGY_EMISSION_FACTORS,
@@ -104,4 +110,22 @@ export function getShare(value: number, total: number) {
   }
 
   return Math.max(0, Math.min(1, value / total));
+}
+
+export function siteRecordToFormValues(site: SiteRecord): SiteFormValues {
+  return {
+    name: site.name,
+    location: site.location,
+    areaM2: String(site.input.areaM2),
+    parkingSpaces: String(site.input.parkingSpaces),
+    annualEnergyMwh: String(site.input.annualEnergyMwh),
+    employees: String(site.input.employees),
+    workstations: String(site.input.workstations),
+    materials: {
+      concrete: String(site.input.materials.concrete),
+      steel: String(site.input.materials.steel),
+      glass: String(site.input.materials.glass),
+      wood: String(site.input.materials.wood),
+    },
+  };
 }

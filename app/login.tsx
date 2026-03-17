@@ -1,7 +1,7 @@
 import { router } from 'expo-router';
-import { LockKeyhole, ShieldCheck } from 'lucide-react-native';
+import { ShieldCheck } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AlertBanner, AppBadgeRow, InputField, PremiumCard, PrimaryButton, ScreenBackground } from '@/ui';
@@ -10,8 +10,8 @@ import { useAppState } from '@/providers/app-provider';
 
 export default function LoginScreen() {
   const { isHydrated, isLoading, login, sessionUser } = useAppState();
-  const [email, setEmail] = useState<string>('chefprojet@capgemini.com');
-  const [password, setPassword] = useState<string>('demo12345');
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -49,32 +49,34 @@ export default function LoginScreen() {
               <View style={styles.heroBadge}>
                 <ShieldCheck color={theme.colors.textOnDark} size={22} />
               </View>
-              <Text style={styles.eyebrow}>CapCarbon Mobile</Text>
+              <Text style={styles.eyebrow}>CapCarbon</Text>
               <Text style={styles.title}>Pilotage carbone terrain</Text>
               <Text style={styles.subtitle}>
-                Connectez-vous pour créer des diagnostics, suivre vos KPI et piloter vos émissions avec une interface claire et moderne.
+                Connectez-vous pour créer des diagnostics, suivre vos KPI et piloter vos émissions.
               </Text>
-              <AppBadgeRow />
+              <View style={styles.badgeWrap}>
+                <AppBadgeRow />
+              </View>
             </View>
 
+            <View style={styles.cardWrap}>
             <PremiumCard testId="login-card">
-              <View style={styles.cardHeader}>
-                <View style={styles.cardIcon}><LockKeyhole color={theme.colors.primaryStrong} size={20} /></View>
-                <View style={styles.cardTextWrap}>
-                  <Text style={styles.cardTitle}>Authentification sécurisée</Text>
-                  <Text style={styles.cardText}>Session JWT active pour accéder à vos sites et indicateurs.</Text>
-                </View>
-              </View>
-
               {errorMessage ? <AlertBanner title="Action requise" description={errorMessage} tone="danger" /> : null}
-
               <View style={styles.form}>
-                <InputField label="Email professionnel" value={email} onChangeText={setEmail} keyboardType="email-address" placeholder="prenom.nom@entreprise.com" testId="email-input" />
+                <InputField label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" placeholder="prenom.nom@entreprise.com" testId="email-input" />
                 <InputField label="Mot de passe" value={password} onChangeText={setPassword} placeholder="Votre mot de passe" testId="password-input" secureTextEntry />
               </View>
 
-              <PrimaryButton label={isSubmitting || isLoading ? 'Connexion en cours…' : 'Accéder au tableau de bord'} onPress={() => void handleLogin()} icon="arrow" testId="login-button" />
+              <PrimaryButton label={isSubmitting || isLoading ? 'Connexion en cours…' : 'Se connecter'} onPress={() => void handleLogin()} icon="arrow" testId="login-button" />
+
+              <View style={styles.footer}>
+                <Text style={styles.footerText}>Pas encore de compte ? </Text>
+                <Pressable onPress={() => router.push('/register')} testID="link-register">
+                  <Text style={styles.footerLink}>Créer un compte</Text>
+                </Pressable>
+              </View>
             </PremiumCard>
+            </View>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -94,10 +96,21 @@ const styles = StyleSheet.create({
     paddingTop: 32,
     gap: 20,
     justifyContent: 'center',
+    alignItems: 'center',
     flexGrow: 1,
   },
   hero: {
     gap: 14,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 400,
+  },
+  badgeWrap: {
+    alignItems: 'center',
+  },
+  cardWrap: {
+    width: '100%',
+    maxWidth: 400,
   },
   heroBadge: {
     width: 56,
@@ -113,18 +126,21 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     textTransform: 'uppercase',
     letterSpacing: 1.2,
+    textAlign: 'center',
   },
   title: {
     color: theme.colors.text,
     fontSize: 38,
     lineHeight: 42,
     fontWeight: '800',
+    textAlign: 'center',
   },
   subtitle: {
     color: theme.colors.textMuted,
     fontSize: 15,
     lineHeight: 22,
     maxWidth: 360,
+    textAlign: 'center',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -158,5 +174,21 @@ const styles = StyleSheet.create({
     gap: 14,
     marginBottom: 20,
     marginTop: 12,
+  },
+  footer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 20,
+    gap: 4,
+  },
+  footerText: {
+    color: theme.colors.textMuted,
+    fontSize: 14,
+  },
+  footerLink: {
+    color: theme.colors.primaryStrong,
+    fontSize: 14,
+    fontWeight: '700',
   },
 });

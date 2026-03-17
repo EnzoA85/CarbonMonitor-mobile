@@ -1,5 +1,5 @@
 import { Redirect, Tabs } from 'expo-router';
-import { ChartColumnBig, Clock3, User } from 'lucide-react-native';
+import { Building2, Clock3, Home, User } from 'lucide-react-native';
 
 import { theme } from '@/constants/theme';
 import { useAppState } from '@/providers/app-provider';
@@ -27,7 +27,7 @@ export default function TabLayout() {
           borderTopWidth: 1,
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: '700',
         },
         tabBarShowLabel: true,
@@ -36,8 +36,15 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Pilotage',
-          tabBarIcon: ({ color, size }) => <ChartColumnBig color={color} size={size} />,
+          title: 'Home',
+          tabBarIcon: ({ color, size }) => <Home color={color} size={size} />,
+        }}
+      />
+      <Tabs.Screen
+        name="sites"
+        options={{
+          title: 'Sites',
+          tabBarIcon: ({ color, size }) => <Building2 color={color} size={size} />,
         }}
       />
       <Tabs.Screen
