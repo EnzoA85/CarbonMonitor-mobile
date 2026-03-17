@@ -65,12 +65,19 @@ export interface SiteHistoryPoint {
   totalEmission: number;
 }
 
+export interface SiteMaterialRecord {
+  materialId: number;
+  materialName: string;
+  quantity: number;
+}
+
 export interface SiteRecord {
   id: string;
   name: string;
   location: string;
   createdAt: string;
   updatedAt: string;
+  siteMaterials: SiteMaterialRecord[];
   input: {
     areaM2: number;
     parkingSpaces: number;

@@ -1,50 +1,99 @@
-# Welcome to your Expo app 👋
+# CarbonMonitor Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Mobile app for monitoring the carbon footprint of physical sites. Part of the **Hackathon Capgemini 2026** — *Calculer l'empreinte carbone d'un site physique*.
 
-## Get started
-docker-compose up -d postgres capcarbon-api
-1. Install dependencies
+## Tech Stack
 
-   ```bash
-   npm install
-   ```
+- **Expo 54** · **React Native**
+- **Expo Router** (file-based routing)
+- **React Query** · **AsyncStorage**
+- **Lucide React Native** (icons)
 
-2. Start the app
+## Features
 
-   ```bash
-   npx expo start
-   ```
+- **Authentication**: Login, register, JWT session persistence
+- **Dashboard**: Total CO₂, construction/exploitation split, last site KPIs
+- **Sites**: List, create, edit, delete sites
+- **Site creation**: 3 sections — General info, Energy & Transport, Construction materials
+- **Materials**: 10 Base Carbone® materials + "Other" for custom materials with emission factor
+- **Address**: Street, postal code, city
+- **Calculation methodology**: Accordion with formulas (CO₂ total, construction, exploitation, CO₂/m², CO₂/employee, CO₂/workstation)
 
-In the output, you'll find options to open the app in a
+## Prerequisites
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- **Node.js** 18+
+- **API** running at `http://localhost:8080/api` (or set `EXPO_PUBLIC_API_URL`)
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Quick Start
 
-## Get a fresh project
-
-When you're ready, run:
+1. **Start the API** (from `CarbonMonitor-api`):
 
 ```bash
-npm run reset-project
+docker-compose up -d postgres capcarbon-api
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+2. **Install dependencies**:
 
-## Learn more
+```bash
+npm install
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+3. **Start the app**:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```bash
+npx expo start
+```
 
-## Join the community
+4. Open in **Expo Go**, **iOS Simulator**, or **Android Emulator**.
 
-Join our community of developers creating universal apps.
+## Configuration
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `EXPO_PUBLIC_API_URL` | http://localhost:8080/api | API base URL |
+
+For a physical device, use your machine's IP (e.g. `http://192.168.1.x:8080/api`).
+
+## Project Structure
+
+```
+app/
+  (tabs)/          # Tab navigation (Home, Sites, History, Profile)
+    index.tsx      # Dashboard
+    sites.tsx      # Sites list
+    history.tsx    # History
+    profile.tsx    # Profile & logout
+  site/
+    new.tsx        # Create site
+    [id].tsx       # Site detail
+    edit/[id].tsx  # Edit site
+  login.tsx
+  register.tsx
+constants/         # Theme, emission factors, Base Carbone materials
+providers/         # App state, auth, sites
+services/          # API client, site mapper
+ui/                # Reusable components
+utils/             # Calculations, formatting
+```
+
+## Calculation Methodology
+
+- **CO₂ total** = construction + exploitation
+- **Construction** = Σ (material quantity × Base Carbone® emission factor)
+- **Exploitation** = energy + parking + employees + workstations + surface
+- **CO₂ / m²** = CO₂ total ÷ surface (m²)
+- **CO₂ / employé** = CO₂ total ÷ employees
+- **CO₂ / poste de travail** = CO₂ total ÷ workstations
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm start` | Start Expo dev server |
+| `npm run ios` | Open iOS simulator |
+| `npm run android` | Open Android emulator |
+| `npm run lint` | Run ESLint |
+
+## License
+
+Internal use — Hackathon Capgemini 2026.

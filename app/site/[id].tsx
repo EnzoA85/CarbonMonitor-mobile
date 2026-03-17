@@ -3,7 +3,7 @@ import { Building2, Factory, HardHat, Ruler, Trash2, Users } from 'lucide-react-
 import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { MetricCard, PremiumCard, PrimaryButton, ScreenBackground, SectionTitle, SiteMetaRow } from '@/ui';
+import { ConfirmModal, MetricCard, PremiumCard, PrimaryButton, ScreenBackground, SectionTitle, SiteMetaRow } from '@/ui';
 import { theme } from '@/constants/theme';
 import { useAppState } from '@/providers/app-provider';
 import { formatDate, formatKg, formatTonnes } from '@/utils/format';
@@ -12,33 +12,27 @@ export default function SiteDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
   const { isHydrated, sessionUser, sites, deleteSite } = useAppState();
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const site = sites.find((item) => item.id === params.id) ?? null;
 
-  const handleDelete = () => {
+  const handleDeletePress = () => {
     if (!site) return;
-    Alert.alert(
-      'Supprimer le site',
-      `Êtes-vous sûr de vouloir supprimer « ${site.name} » ?`,
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Supprimer',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setDeleting(true);
-              await deleteSite(site.id);
-              router.replace('/sites' as const);
-            } catch {
-              Alert.alert('Erreur', 'Impossible de supprimer le site.');
-            } finally {
-              setDeleting(false);
-            }
-          },
-        },
-      ]
-    );
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!site) return;
+    try {
+      setDeleting(true);
+      await deleteSite(site.id);
+      setShowDeleteModal(false);
+      router.replace('/sites');
+    } catch {
+      Alert.alert('Erreur', 'Impossible de supprimer le site.');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   useEffect(() => {
@@ -93,21 +87,40 @@ export default function SiteDetailScreen() {
         <PremiumCard testId="materials-detail-card">
           <View style={styles.materialHeader}><HardHat color={theme.colors.primaryStrong} size={18} /><Text style={styles.cardTitle}>Répartition matériaux</Text></View>
           <View style={styles.materialList}>
-            <View style={styles.materialRow}><Text style={styles.materialLabel}>Béton</Text><Text style={styles.materialValue}>{site.input.materials.concrete} t</Text></View>
-            <View style={styles.materialRow}><Text style={styles.materialLabel}>Acier</Text><Text style={styles.materialValue}>{site.input.materials.steel} t</Text></View>
-            <View style={styles.materialRow}><Text style={styles.materialLabel}>Verre</Text><Text style={styles.materialValue}>{site.input.materials.glass} t</Text></View>
-            <View style={styles.materialRow}><Text style={styles.materialLabel}>Bois</Text><Text style={styles.materialValue}>{site.input.materials.wood} t</Text></View>
+            {site.siteMaterials?.length > 0 ? (
+              site.siteMaterials.map((sm) => (
+                <View key={sm.materialId} style={styles.materialRow}>
+                  <Text style={styles.materialLabel}>{sm.materialName}</Text>
+                  <Text style={styles.materialValue}>{sm.quantity >= 1000 ? `${(sm.quantity / 1000).toFixed(1)} t` : `${sm.quantity} kg`}</Text>
+                </View>
+              ))
+            ) : (
+              <Text style={styles.materialEmpty}>Aucun matériau renseigné</Text>
+            )}
           </View>
         </PremiumCard>
 
         <View style={styles.actions}>
           <PrimaryButton label="Modifier" onPress={() => router.push(`/site/edit/${site.id}` as const)} variant="secondary" testId="edit-site-button" />
-          <Pressable onPress={handleDelete} disabled={deleting} style={styles.deleteBtn}>
+          <Pressable onPress={handleDeletePress} disabled={deleting} style={styles.deleteBtn}>
             <Trash2 color={theme.colors.danger} size={18} />
             <Text style={styles.deleteBtnText}>Supprimer</Text>
           </Pressable>
         </View>
       </ScrollView>
+
+      <ConfirmModal
+        visible={showDeleteModal}
+        title="Supprimer le site"
+        message={`Êtes-vous sûr de vouloir supprimer « ${site.name} » ? Cette action est irréversible.`}
+        confirmLabel="Supprimer"
+        cancelLabel="Annuler"
+        loadingLabel="Suppression…"
+        destructive
+        loading={deleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setShowDeleteModal(false)}
+      />
     </ScreenBackground>
   );
 }
@@ -191,6 +204,11 @@ const styles = StyleSheet.create({
   },
   materialList: {
     gap: 12,
+  },
+  materialEmpty: {
+    color: theme.colors.textMuted,
+    fontSize: 14,
+    paddingVertical: 12,
   },
   materialRow: {
     flexDirection: 'row',

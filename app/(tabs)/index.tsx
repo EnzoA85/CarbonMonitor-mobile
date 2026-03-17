@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { BarChart3, ShieldCheck } from 'lucide-react-native';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
@@ -10,7 +10,6 @@ import {
   EmptyState,
   MetricCard,
   PremiumCard,
-  PrimaryButton,
   ScreenBackground,
   SectionTitle,
   SimpleBarChart,
@@ -18,7 +17,7 @@ import {
 } from '@/ui';
 import { theme } from '@/constants/theme';
 import { useAppState } from '@/providers/app-provider';
-import { formatDate, formatKg, formatTonnes } from '@/utils/format';
+import { formatDate, formatKg, formatTonnes, getDisplayNameFromEmail } from '@/utils/format';
 
 export default function HomeScreen() {
   const { latestSite, sessionUser, totals } = useAppState();
@@ -52,7 +51,11 @@ export default function HomeScreen() {
                 <View style={styles.heroIcon}><ShieldCheck color={theme.colors.textOnDark} size={20} /></View>
                 <View>
                   <Text style={styles.heroLabel}>Session active</Text>
-                  <Text style={styles.heroValue}>{sessionUser?.organization || sessionUser?.email || '—'}</Text>
+                  <Text style={styles.heroValue}>
+                  {sessionUser?.email
+                    ? getDisplayNameFromEmail(sessionUser.email) || sessionUser.organization || '—'
+                    : '—'}
+                </Text>
                 </View>
               </View>
             </View>
@@ -92,44 +95,47 @@ export default function HomeScreen() {
           />
 
           {latestSite ? (
-            <PremiumCard testId="latest-site-card">
-              <View style={styles.latestHeader}>
-                <View>
-                  <Text style={styles.siteName}>{latestSite.name}</Text>
-                  <SiteMetaRow date={formatDate(latestSite.updatedAt)} location={latestSite.location} />
+            <Pressable onPress={() => router.push(`/site/${latestSite.id}` as const)} testID="latest-site-card">
+              <PremiumCard testId="latest-site-card">
+                <View style={styles.latestHeader}>
+                  <View style={styles.latestSiteInfo}>
+                    <Text style={styles.siteName}>{latestSite.name}</Text>
+                    <SiteMetaRow date={formatDate(latestSite.updatedAt)} location={latestSite.location} />
+                  </View>
                 </View>
-                <PrimaryButton label="Voir" onPress={() => router.push(`/site/${latestSite.id}` as const)} variant="secondary" testId="latest-site-open" />
-              </View>
 
-              <View style={styles.metricRow}>
-                <MetricCard
-                  detail="Empreinte globale calculée"
-                  label="Total"
-                  testId="latest-total"
-                  value={formatTonnes(latestSite.metrics.totalTonnesCo2e)}
-                />
-                <MetricCard
-                  detail="Intensité surfacique"
-                  label="CO₂ / m²"
-                  testId="latest-co2-m2"
-                  value={formatKg(latestSite.metrics.co2PerM2)}
-                />
+                <View style={styles.metricGrid}>
+                <View style={styles.metricRow}>
+                  <MetricCard
+                    detail="Empreinte globale calculée"
+                    label="Total"
+                    testId="latest-total"
+                    value={formatTonnes(latestSite.metrics.totalTonnesCo2e)}
+                  />
+                  <MetricCard
+                    detail="Intensité surfacique"
+                    label="CO₂ / m²"
+                    testId="latest-co2-m2"
+                    value={formatKg(latestSite.metrics.co2PerM2)}
+                  />
+                </View>
+                <View style={styles.metricRow}>
+                  <MetricCard
+                    detail="Intensité par collaborateur"
+                    label="CO₂ / employé"
+                    testId="latest-co2-employee"
+                    value={formatKg(latestSite.metrics.co2PerEmployee)}
+                  />
+                  <MetricCard
+                    detail="Répartition exploitation"
+                    label="Exploitation"
+                    testId="latest-operation"
+                    value={formatTonnes(latestSite.metrics.operationKgCo2e / 1000)}
+                  />
+                </View>
               </View>
-              <View style={styles.metricRow}>
-                <MetricCard
-                  detail="Intensité par collaborateur"
-                  label="CO₂ / employé"
-                  testId="latest-co2-employee"
-                  value={formatKg(latestSite.metrics.co2PerEmployee)}
-                />
-                <MetricCard
-                  detail="Répartition exploitation"
-                  label="Exploitation"
-                  testId="latest-operation"
-                  value={formatTonnes(latestSite.metrics.operationKgCo2e / 1000)}
-                />
-              </View>
-            </PremiumCard>
+              </PremiumCard>
+            </Pressable>
           ) : (
             <PremiumCard testId="empty-latest">
               <EmptyState />
@@ -215,6 +221,9 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginTop: 2,
   },
+  metricGrid: {
+    gap: 12,
+  },
   metricRow: {
     flexDirection: 'row',
     gap: 12,
@@ -238,11 +247,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   latestHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: 12,
     marginBottom: 18,
+  },
+  latestSiteInfo: {
+    flex: 1,
+    minWidth: 0,
   },
   siteName: {
     color: theme.colors.text,

@@ -14,7 +14,7 @@ import {
   SURFACE_FACTOR,
   WORKSTATION_FACTOR,
 } from '@/constants/emission-factors';
-import type { NewSiteFormValues, SiteFormValues, SiteMetrics, SiteRecord } from '@/types/site';
+import type { MaterialFormEntry, NewSiteFormValues, SiteFormValues, SiteMetrics, SiteRecord } from '@/types/site';
 
 function parseNumber(value: string) {
   const normalized = value.replace(',', '.').trim();
@@ -79,6 +79,7 @@ export function buildSiteRecord(values: SiteFormValues): SiteRecord {
     location: buildLocationFromParts(values.address, values.postalCode, values.city),
     createdAt: now,
     updatedAt: now,
+    siteMaterials: [],
     input: {
       areaM2: parseNumber(values.areaM2),
       parkingSpaces: parseNumber(values.parkingSpaces),
@@ -191,6 +192,35 @@ function parseLocation(location: string): { address: string; postalCode: string;
   const m2 = location.match(/^(\d{5})\s+(.+)$/);
   if (m2) return { address: '', postalCode: m2[1], city: m2[2].trim() };
   return { address: location.trim(), postalCode: '', city: '' };
+}
+
+function genId() {
+  return `m-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+export function siteRecordToNewSiteFormValues(site: SiteRecord): NewSiteFormValues {
+  const { address, postalCode, city } = parseLocation(site.location);
+  const energyKwhAn = site.input.annualEnergyMwh ? String(Number(site.input.annualEnergyMwh) * 1000) : '';
+  const materials: MaterialFormEntry[] =
+    site.siteMaterials?.length > 0
+      ? site.siteMaterials.map((sm) => ({
+          id: genId(),
+          materialId: String(sm.materialId),
+          quantityKg: String(sm.quantity),
+        }))
+      : [{ id: genId(), materialId: '', quantityKg: '' }];
+  return {
+    name: site.name,
+    address,
+    postalCode,
+    city,
+    surfaceM2: String(site.input.areaM2),
+    workstations: String(site.input.workstations),
+    energyKwhAn,
+    parkingSpaces: String(site.input.parkingSpaces),
+    employees: String(site.input.employees),
+    materials,
+  };
 }
 
 export function siteRecordToFormValues(site: SiteRecord): SiteFormValues {

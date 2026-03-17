@@ -5,6 +5,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {
+  ConfirmModal,
   EmptyState,
   PremiumCard,
   PrimaryButton,
@@ -18,30 +19,24 @@ import { formatDate, formatTonnes } from '@/utils/format';
 export default function SitesScreen() {
   const { sites, deleteSite } = useAppState();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteModalSite, setDeleteModalSite] = useState<{ id: string; name: string } | null>(null);
 
-  const handleDelete = (siteId: string, siteName: string) => {
-    Alert.alert(
-      'Supprimer le site',
-      `Êtes-vous sûr de vouloir supprimer « ${siteName} » ?`,
-      [
-        { text: 'Annuler', style: 'cancel' },
-        {
-          text: 'Supprimer',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setDeletingId(siteId);
-              await deleteSite(siteId);
-            } catch (e) {
-              console.error(e);
-              Alert.alert('Erreur', 'Impossible de supprimer le site.');
-            } finally {
-              setDeletingId(null);
-            }
-          },
-        },
-      ]
-    );
+  const handleDeletePress = (siteId: string, siteName: string) => {
+    setDeleteModalSite({ id: siteId, name: siteName });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModalSite) return;
+    try {
+      setDeletingId(deleteModalSite.id);
+      await deleteSite(deleteModalSite.id);
+      setDeleteModalSite(null);
+    } catch (e) {
+      console.error(e);
+      Alert.alert('Erreur', 'Impossible de supprimer le site.');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -110,7 +105,7 @@ export default function SitesScreen() {
                       <Pencil color={theme.colors.primaryStrong} size={18} />
                     </Pressable>
                     <Pressable
-                      onPress={() => handleDelete(site.id, site.name)}
+                      onPress={() => handleDeletePress(site.id, site.name)}
                       disabled={deletingId === site.id}
                       style={styles.iconBtn}
                     >
@@ -123,6 +118,21 @@ export default function SitesScreen() {
           )}
         </ScrollView>
       </SafeAreaView>
+
+      {deleteModalSite && (
+        <ConfirmModal
+          visible={!!deleteModalSite}
+          title="Supprimer le site"
+          message={`Êtes-vous sûr de vouloir supprimer « ${deleteModalSite.name} » ? Cette action est irréversible.`}
+          confirmLabel="Supprimer"
+          cancelLabel="Annuler"
+          loadingLabel="Suppression…"
+          destructive
+          loading={deletingId === deleteModalSite.id}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setDeleteModalSite(null)}
+        />
+      )}
     </ScreenBackground>
   );
 }

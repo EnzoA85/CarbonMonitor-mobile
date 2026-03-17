@@ -60,8 +60,14 @@ export function SectionTitle({
 export function SiteMetaRow({ location, date }: { location: string; date: string }) {
   return (
     <View style={styles.metaRow}>
-      <View style={styles.metaItem}><MapPin color={theme.colors.textMuted} size={14} /><Text style={styles.metaText}>{location}</Text></View>
-      <View style={styles.metaItem}><History color={theme.colors.textMuted} size={14} /><Text style={styles.metaText}>{date}</Text></View>
+      <View style={styles.metaItem}>
+        <MapPin color={theme.colors.textMuted} size={14} />
+        <Text style={styles.metaText} numberOfLines={1} ellipsizeMode="tail">{location}</Text>
+      </View>
+      <View style={styles.metaItem}>
+        <History color={theme.colors.textMuted} size={14} />
+        <Text style={styles.metaText}>{date}</Text>
+      </View>
     </View>
   );
 }
@@ -168,9 +174,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   metaRow: {
-    flexDirection: 'row',
-    gap: 14,
-    flexWrap: 'wrap',
+    flexDirection: 'column',
+    gap: 6,
   },
   metaItem: {
     flexDirection: 'row',

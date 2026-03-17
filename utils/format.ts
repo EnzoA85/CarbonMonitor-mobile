@@ -20,3 +20,15 @@ export function formatDate(dateIso: string) {
     year: 'numeric',
   }).format(new Date(dateIso));
 }
+
+/**
+ * Extrait le prénom de l'email pour l'affichage.
+ * Ex: adama.barry@capgemini.com => "Adama"
+ */
+export function getDisplayNameFromEmail(email: string): string {
+  if (!email?.trim()) return '';
+  const localPart = email.split('@')[0]?.trim() || '';
+  const firstSegment = localPart.split(/[._-]/)[0] || '';
+  if (!firstSegment) return '';
+  return firstSegment.charAt(0).toUpperCase() + firstSegment.slice(1).toLowerCase();
+}

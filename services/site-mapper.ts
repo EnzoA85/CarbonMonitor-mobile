@@ -20,7 +20,7 @@ function inferWorkstations(employees: number) {
 
 export function toSiteRecord({
   site,
-  siteMaterials,
+  siteMaterials: siteMaterialsRaw,
   result,
   history,
 }: {
@@ -29,7 +29,7 @@ export function toSiteRecord({
   result: CarbonResultApiResponse | null;
   history: SiteRecord['history'];
 }): SiteRecord {
-  const construction = result?.constructionEmission ?? siteMaterials.reduce((acc, item) => acc + item.calculatedEmission, 0);
+  const construction = result?.constructionEmission ?? siteMaterialsRaw.reduce((acc, item) => acc + item.calculatedEmission, 0);
   const operation = result?.exploitationEmission ?? 0;
   const total = result?.totalEmission ?? construction + operation;
   const surface = site.surface ?? 0;
@@ -46,12 +46,19 @@ export function toSiteRecord({
     co2PerWorkstation: workstations > 0 ? total / workstations : 0,
   };
 
+  const siteMaterials: SiteRecord['siteMaterials'] = siteMaterialsRaw.map((sm) => ({
+    materialId: sm.material.id,
+    materialName: sm.material.name,
+    quantity: sm.quantity,
+  }));
+
   return {
     id: String(site.id),
     name: site.name,
     location: site.location ?? 'Non renseigné',
     createdAt: site.createdAt ?? new Date().toISOString(),
     updatedAt: result?.calculatedAt ?? site.createdAt ?? new Date().toISOString(),
+    siteMaterials,
     input: {
       areaM2: round(surface, 2),
       parkingSpaces: site.parkingSpaces ?? 0,
@@ -59,10 +66,10 @@ export function toSiteRecord({
       employees,
       workstations,
       materials: {
-        concrete: round(pickMaterialQuantity(siteMaterials, ['beton', 'béton', 'concrete']), 2),
-        steel: round(pickMaterialQuantity(siteMaterials, ['acier', 'steel', 'metal']), 2),
-        glass: round(pickMaterialQuantity(siteMaterials, ['verre', 'glass']), 2),
-        wood: round(pickMaterialQuantity(siteMaterials, ['bois', 'wood']), 2),
+        concrete: round(pickMaterialQuantity(siteMaterialsRaw, ['beton', 'béton', 'concrete']), 2),
+        steel: round(pickMaterialQuantity(siteMaterialsRaw, ['acier', 'steel', 'metal']), 2),
+        glass: round(pickMaterialQuantity(siteMaterialsRaw, ['verre', 'glass']), 2),
+        wood: round(pickMaterialQuantity(siteMaterialsRaw, ['bois', 'wood']), 2),
       },
     },
     metrics,

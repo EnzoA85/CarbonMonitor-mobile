@@ -247,6 +247,53 @@ export const [AppProvider, useAppState] = createContextHook(() => {
     [loadSites, sessionUser?.token]
   );
 
+  const updateSiteFromNewForm = useCallback(
+    async (siteId: string, values: NewSiteFormValues) => {
+      if (!sessionUser?.token) {
+        throw new Error('Session expirée. Veuillez vous reconnecter.');
+      }
+      const id = Number(siteId);
+      if (!Number.isFinite(id)) throw new Error('ID de site invalide');
+
+      const payload = newSiteFormToCreatePayload(values);
+      await api.updateSite(sessionUser.token, id, payload);
+
+      const existingMaterials = await api.getSiteMaterials(sessionUser.token, id).catch(() => []);
+      for (const sm of existingMaterials) {
+        await api.removeSiteMaterial(sessionUser.token, id, sm.id);
+      }
+
+      const catalog = await api.listMaterials(sessionUser.token).catch(() => []);
+      const standardPayloads = newSiteFormToMaterialPayloads(values, catalog);
+      const fallbackEntries = newSiteFormToFallbackMaterialEntries(values);
+      const customEntries = newSiteFormToCustomMaterialEntries(values);
+
+      for (const p of standardPayloads) {
+        await api.addSiteMaterial(sessionUser.token, id, { materialId: p.materialId, quantity: p.quantity });
+      }
+      for (const fallback of fallbackEntries) {
+        const newMaterial = await api.createMaterial(sessionUser.token, {
+          name: fallback.name,
+          emissionFactor: fallback.emissionFactor,
+          unit: 'kg',
+        });
+        await api.addSiteMaterial(sessionUser.token, id, { materialId: newMaterial.id, quantity: fallback.quantity });
+      }
+      for (const custom of customEntries) {
+        const newMaterial = await api.createMaterial(sessionUser.token, {
+          name: custom.name,
+          emissionFactor: custom.emissionFactor,
+          unit: 'kg',
+        });
+        await api.addSiteMaterial(sessionUser.token, id, { materialId: newMaterial.id, quantity: custom.quantity });
+      }
+
+      await api.calculateSite(sessionUser.token, id).catch(() => null);
+      await loadSites(sessionUser.token);
+    },
+    [loadSites, sessionUser?.token]
+  );
+
   const deleteSite = useCallback(
     async (siteId: string) => {
       if (!sessionUser?.token) {
@@ -303,6 +350,7 @@ export const [AppProvider, useAppState] = createContextHook(() => {
     createSite,
     createSiteFromNewForm,
     updateSite,
+    updateSiteFromNewForm,
     deleteSite,
     seedDefaultSite,
     totals,

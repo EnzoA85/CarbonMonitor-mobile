@@ -201,6 +201,18 @@ export async function getSiteMaterials(token: string, siteId: number) {
   return parseResponse<SiteMaterialApiResponse[]>(response);
 }
 
+export async function removeSiteMaterial(token: string, siteId: number, siteMaterialId: number) {
+  const response = await fetch(buildUrl(`/sites/${siteId}/materials/${siteMaterialId}`), {
+    method: 'DELETE',
+    headers: buildHeaders(token),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`API ${response.status}: ${text || response.statusText}`);
+  }
+}
+
 export async function calculateSite(token: string, siteId: number) {
   const response = await fetch(buildUrl(`/sites/${siteId}/calculate`), {
     method: 'POST',
