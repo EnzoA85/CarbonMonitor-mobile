@@ -1,5 +1,6 @@
 import { Redirect, Tabs } from 'expo-router';
 import { Building2, Clock3, Home, User } from 'lucide-react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 
 import { theme } from '@/constants/theme';
 import { useAppState } from '@/providers/app-provider';
@@ -8,7 +9,11 @@ export default function TabLayout() {
   const { isHydrated, sessionUser } = useAppState();
 
   if (!isHydrated) {
-    return null;
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color={theme.colors.primaryStrong} />
+      </View>
+    );
   }
 
   if (!sessionUser) {
@@ -64,3 +69,12 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  loading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: theme.colors.background,
+  },
+});

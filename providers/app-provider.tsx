@@ -4,8 +4,15 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import * as api from '@/services/api';
-import { toSiteCreatePayload, toSiteRecord } from '@/services/site-mapper';
-import type { SessionUser, SiteFormValues, SiteHistoryPoint, SiteRecord } from '@/types/site';
+import {
+  newSiteFormToCreatePayload,
+  newSiteFormToCustomMaterialEntries,
+  newSiteFormToFallbackMaterialEntries,
+  newSiteFormToMaterialPayloads,
+  toSiteCreatePayload,
+  toSiteRecord,
+} from '@/services/site-mapper';
+import type { NewSiteFormValues, SessionUser, SiteFormValues, SiteHistoryPoint, SiteRecord } from '@/types/site';
 import { getDefaultSiteValues } from '@/utils/calculations';
 
 const SESSION_STORAGE_KEY = 'carbosite-session';
@@ -40,7 +47,14 @@ export const [AppProvider, useAppState] = createContextHook(() => {
   });
 
   const loadSites = useCallback(async (token: string) => {
-    const siteList = await api.listSites(token);
+    let siteList: api.SiteApiResponse[];
+    try {
+      siteList = await api.listSites(token);
+    } catch (err) {
+      console.warn('[loadSites] API listSites failed:', err);
+      setSites([]);
+      return [];
+    }
 
     const hydratedSites = await Promise.all(
       siteList.map(async (site) => {
@@ -84,7 +98,11 @@ export const [AppProvider, useAppState] = createContextHook(() => {
       }
 
       setSessionUser(storedSession);
-      await loadSites(storedSession.token);
+      try {
+        await loadSites(storedSession.token);
+      } catch (err) {
+        console.warn('[hydrate] loadSites failed:', err);
+      }
     },
   });
 
@@ -96,7 +114,7 @@ export const [AppProvider, useAppState] = createContextHook(() => {
       const user: SessionUser = {
         email: profile.email,
         token: auth.token,
-        organization: 'Capgemini Sustainability',
+        organization: profile.email?.includes('@') ? profile.email.split('@')[1] : '',
         role: profile.role,
       };
 
@@ -116,7 +134,7 @@ export const [AppProvider, useAppState] = createContextHook(() => {
       const user: SessionUser = {
         email: profile.email,
         token: auth.token,
-        organization: 'Capgemini Sustainability',
+        organization: profile.email?.includes('@') ? profile.email.split('@')[1] : '',
         role: profile.role,
       };
 
@@ -156,6 +174,58 @@ export const [AppProvider, useAppState] = createContextHook(() => {
           });
         })
       );
+
+      await api.calculateSite(sessionUser.token, createdSite.id).catch(() => null);
+      const refreshedSites = await loadSites(sessionUser.token);
+      return refreshedSites.find((site) => site.id === String(createdSite.id)) ?? refreshedSites[0];
+    },
+    [loadSites, sessionUser?.token]
+  );
+
+  const createSiteFromNewForm = useCallback(
+    async (values: NewSiteFormValues) => {
+      if (!sessionUser?.token) {
+        throw new Error('Session expirée. Veuillez vous reconnecter.');
+      }
+
+      const payload = newSiteFormToCreatePayload(values);
+      const createdSite = await api.createSite(sessionUser.token, payload);
+      const catalog = await api.listMaterials(sessionUser.token).catch(() => []);
+
+      const standardPayloads = newSiteFormToMaterialPayloads(values, catalog);
+      const fallbackEntries = newSiteFormToFallbackMaterialEntries(values);
+      const customEntries = newSiteFormToCustomMaterialEntries(values);
+
+      for (const p of standardPayloads) {
+        await api.addSiteMaterial(sessionUser.token, createdSite.id, {
+          materialId: p.materialId,
+          quantity: p.quantity,
+        });
+      }
+
+      for (const fallback of fallbackEntries) {
+        const newMaterial = await api.createMaterial(sessionUser.token, {
+          name: fallback.name,
+          emissionFactor: fallback.emissionFactor,
+          unit: 'kg',
+        });
+        await api.addSiteMaterial(sessionUser.token, createdSite.id, {
+          materialId: newMaterial.id,
+          quantity: fallback.quantity,
+        });
+      }
+
+      for (const custom of customEntries) {
+        const newMaterial = await api.createMaterial(sessionUser.token, {
+          name: custom.name,
+          emissionFactor: custom.emissionFactor,
+          unit: 'kg',
+        });
+        await api.addSiteMaterial(sessionUser.token, createdSite.id, {
+          materialId: newMaterial.id,
+          quantity: custom.quantity,
+        });
+      }
 
       await api.calculateSite(sessionUser.token, createdSite.id).catch(() => null);
       const refreshedSites = await loadSites(sessionUser.token);
@@ -231,6 +301,7 @@ export const [AppProvider, useAppState] = createContextHook(() => {
     register,
     logout,
     createSite,
+    createSiteFromNewForm,
     updateSite,
     deleteSite,
     seedDefaultSite,

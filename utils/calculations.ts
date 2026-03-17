@@ -4,6 +4,8 @@
  * le détail des sites et l'historique proviennent du backend via
  * getSiteReport, getSiteMaterials et CarbonResultResponse.
  */
+import type { MaterialApiResponse } from '@/services/api';
+import { MATERIAL_OTHER } from '@/types/site';
 import {
   EMPLOYEE_FACTOR,
   ENERGY_EMISSION_FACTORS,
@@ -12,7 +14,7 @@ import {
   SURFACE_FACTOR,
   WORKSTATION_FACTOR,
 } from '@/constants/emission-factors';
-import type { SiteFormValues, SiteMetrics, SiteRecord } from '@/types/site';
+import type { NewSiteFormValues, SiteFormValues, SiteMetrics, SiteRecord } from '@/types/site';
 
 function parseNumber(value: string) {
   const normalized = value.replace(',', '.').trim();
@@ -58,6 +60,15 @@ export function calculateSiteMetrics(values: SiteFormValues): SiteMetrics {
   };
 }
 
+function buildLocationFromParts(address: string, postalCode: string, city: string): string {
+  const parts: string[] = [];
+  if (address?.trim()) parts.push(address.trim());
+  if (postalCode?.trim() && city?.trim()) parts.push(`${postalCode.trim()} ${city.trim()}`);
+  else if (postalCode?.trim()) parts.push(postalCode.trim());
+  else if (city?.trim()) parts.push(city.trim());
+  return parts.join(', ') || 'Non renseigné';
+}
+
 export function buildSiteRecord(values: SiteFormValues): SiteRecord {
   const now = new Date().toISOString();
   const metrics = calculateSiteMetrics(values);
@@ -65,7 +76,7 @@ export function buildSiteRecord(values: SiteFormValues): SiteRecord {
   return {
     id: `${Date.now()}`,
     name: values.name.trim() || 'Site sans nom',
-    location: values.location.trim() || 'France',
+    location: buildLocationFromParts(values.address, values.postalCode, values.city),
     createdAt: now,
     updatedAt: now,
     input: {
@@ -88,19 +99,80 @@ export function buildSiteRecord(values: SiteFormValues): SiteRecord {
 
 export function getDefaultSiteValues(): SiteFormValues {
   return {
-    name: 'Capgemini Rennes',
-    location: 'Rennes',
-    areaM2: '11771',
-    parkingSpaces: '220',
-    annualEnergyMwh: '1840',
-    employees: '1800',
-    workstations: '1037',
+    name: '',
+    address: '',
+    postalCode: '',
+    city: '',
+    areaM2: '',
+    parkingSpaces: '',
+    annualEnergyMwh: '',
+    employees: '',
+    workstations: '',
     materials: {
-      concrete: '6200',
-      steel: '740',
-      glass: '310',
-      wood: '120',
+      concrete: '',
+      steel: '',
+      glass: '',
+      wood: '',
     },
+  };
+}
+
+export function calculateNewSiteMetrics(
+  values: NewSiteFormValues,
+  catalog: MaterialApiResponse[]
+): SiteMetrics {
+  const surfaceM2 = parseNumber(values.surfaceM2);
+  const parkingSpaces = parseNumber(values.parkingSpaces);
+  const energyKwhAn = parseNumber(values.energyKwhAn);
+  const employees = parseNumber(values.employees);
+  const workstations = parseNumber(values.workstations);
+
+  const materialMap = new Map(catalog.map((m) => [m.id, m.emissionFactor]));
+  const constructionKgCo2e = values.materials.reduce((acc, e) => {
+    const qty = parseNumber(e.quantityKg);
+    let factor: number;
+    if (e.materialId === MATERIAL_OTHER && e.customEmissionFactor != null) {
+      factor = parseNumber(e.customEmissionFactor);
+    } else {
+      factor = materialMap.get(Number(e.materialId)) ?? 0;
+    }
+    return acc + qty * factor;
+  }, 0);
+
+  const annualEnergyMwh = energyKwhAn / 1000;
+  const operationKgCo2e =
+    annualEnergyMwh * 1000 * ENERGY_EMISSION_FACTORS.electricityKwh +
+    parkingSpaces * 1000 * PARKING_SPACE_FACTOR +
+    employees * 1000 * EMPLOYEE_FACTOR +
+    workstations * 1000 * WORKSTATION_FACTOR +
+    surfaceM2 * 1000 * SURFACE_FACTOR;
+
+  const totalKgCo2e = constructionKgCo2e + operationKgCo2e;
+  const totalTonnesCo2e = totalKgCo2e / 1000;
+
+  return {
+    totalKgCo2e,
+    totalTonnesCo2e,
+    constructionKgCo2e,
+    operationKgCo2e,
+    co2PerM2: surfaceM2 > 0 ? totalKgCo2e / surfaceM2 : 0,
+    co2PerEmployee: employees > 0 ? totalKgCo2e / employees : 0,
+    co2PerWorkstation: workstations > 0 ? totalKgCo2e / workstations : 0,
+  };
+}
+
+export function getDefaultNewSiteValues(): NewSiteFormValues {
+  return {
+    name: '',
+    address: '',
+    postalCode: '',
+    city: '',
+    surfaceM2: '',
+    workstations: '',
+    energyKwhAn: '',
+    parkingSpaces: '',
+    employees: '',
+    materials: [{ id: `m-${Date.now()}-${Math.random().toString(36).slice(2)}`, materialId: '', quantityKg: '' }],
   };
 }
 
@@ -112,10 +184,22 @@ export function getShare(value: number, total: number) {
   return Math.max(0, Math.min(1, value / total));
 }
 
+function parseLocation(location: string): { address: string; postalCode: string; city: string } {
+  if (!location?.trim()) return { address: '', postalCode: '', city: '' };
+  const m = location.match(/^(.+),\s*(\d{5})\s+(.+)$/);
+  if (m) return { address: m[1].trim(), postalCode: m[2], city: m[3].trim() };
+  const m2 = location.match(/^(\d{5})\s+(.+)$/);
+  if (m2) return { address: '', postalCode: m2[1], city: m2[2].trim() };
+  return { address: location.trim(), postalCode: '', city: '' };
+}
+
 export function siteRecordToFormValues(site: SiteRecord): SiteFormValues {
+  const { address, postalCode, city } = parseLocation(site.location);
   return {
     name: site.name,
-    location: site.location,
+    address,
+    postalCode,
+    city,
     areaM2: String(site.input.areaM2),
     parkingSpaces: String(site.input.parkingSpaces),
     annualEnergyMwh: String(site.input.annualEnergyMwh),

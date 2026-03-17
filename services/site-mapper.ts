@@ -1,5 +1,7 @@
-import type { SiteMetrics, SiteRecord } from '@/types/site';
-import type { CarbonResultApiResponse, SiteApiResponse, SiteMaterialApiResponse } from '@/services/api';
+import { FALLBACK_MATERIALS } from '@/constants/base-carbone-materials';
+import type { NewSiteFormValues, SiteMetrics, SiteRecord } from '@/types/site';
+import { MATERIAL_OTHER } from '@/types/site';
+import type { CarbonResultApiResponse, MaterialApiResponse, SiteApiResponse, SiteMaterialApiResponse } from '@/services/api';
 
 function round(value: number, digits = 2) {
   const factor = 10 ** digits;
@@ -70,7 +72,9 @@ export function toSiteRecord({
 
 export function toSiteCreatePayload(values: {
   name: string;
-  location: string;
+  address: string;
+  postalCode: string;
+  city: string;
   areaM2: string;
   parkingSpaces: string;
   annualEnergyMwh: string;
@@ -83,10 +87,92 @@ export function toSiteCreatePayload(values: {
 
   return {
     name: values.name.trim() || 'Site sans nom',
-    location: values.location.trim() || 'Non renseigné',
+    location: buildLocation(values.address, values.postalCode, values.city),
     surface: parseNumber(values.areaM2),
     parkingSpaces: Math.max(0, Math.round(parseNumber(values.parkingSpaces))),
     employees: Math.max(0, Math.round(parseNumber(values.employees))),
     energyConsumption: parseNumber(values.annualEnergyMwh),
   };
+}
+
+const parseNum = (raw: string) => {
+  const parsed = Number(String(raw).replace(',', '.').trim());
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+function buildLocation(address: string, postalCode: string, city: string): string {
+  const parts: string[] = [];
+  if (address?.trim()) parts.push(address.trim());
+  if (postalCode?.trim() && city?.trim()) parts.push(`${postalCode.trim()} ${city.trim()}`);
+  else if (postalCode?.trim()) parts.push(postalCode.trim());
+  else if (city?.trim()) parts.push(city.trim());
+  return parts.join(', ') || 'Non renseigné';
+}
+
+export function newSiteFormToCreatePayload(values: NewSiteFormValues) {
+  return {
+    name: values.name.trim() || 'Site sans nom',
+    location: buildLocation(values.address, values.postalCode, values.city),
+    surface: parseNum(values.surfaceM2),
+    parkingSpaces: Math.max(0, Math.round(parseNum(values.parkingSpaces))),
+    employees: Math.max(0, Math.round(parseNum(values.employees))),
+    energyConsumption: parseNum(values.energyKwhAn) / 1000,
+  };
+}
+
+export function newSiteFormToMaterialPayloads(
+  values: NewSiteFormValues,
+  catalog: MaterialApiResponse[]
+): { materialId: number; quantity: number }[] {
+  const catalogIds = new Set(catalog.map((m) => m.id));
+  return values.materials
+    .filter((e) => e.materialId && e.materialId !== MATERIAL_OTHER && parseNum(e.quantityKg) > 0)
+    .map((e) => ({
+      materialId: Number(e.materialId),
+      quantity: parseNum(e.quantityKg),
+    }))
+    .filter((p) => Number.isFinite(p.materialId) && catalogIds.has(p.materialId));
+}
+
+/** Entrées matériaux de secours (id < 0) à créer via API avant d'ajouter au site */
+export function newSiteFormToFallbackMaterialEntries(values: NewSiteFormValues): {
+  name: string;
+  emissionFactor: number;
+  quantity: number;
+}[] {
+  const fallbackById = new Map(FALLBACK_MATERIALS.map((m) => [m.id, m]));
+  return values.materials
+    .filter((e) => {
+      const id = Number(e.materialId);
+      return Number.isFinite(id) && id < 0 && parseNum(e.quantityKg) > 0 && fallbackById.has(id);
+    })
+    .map((e) => {
+      const m = fallbackById.get(Number(e.materialId))!;
+      return {
+        name: m.name,
+        emissionFactor: m.emissionFactor,
+        quantity: parseNum(e.quantityKg),
+      };
+    });
+}
+
+/** Entrées "Autre" à créer via API avant d'ajouter au site */
+export function newSiteFormToCustomMaterialEntries(values: NewSiteFormValues): {
+  name: string;
+  emissionFactor: number;
+  quantity: number;
+}[] {
+  return values.materials
+    .filter(
+      (e) =>
+        e.materialId === MATERIAL_OTHER &&
+        (e.customMaterialName ?? '').trim() &&
+        parseNum(e.customEmissionFactor) > 0 &&
+        parseNum(e.quantityKg) > 0
+    )
+    .map((e) => ({
+      name: (e.customMaterialName ?? '').trim(),
+      emissionFactor: parseNum(e.customEmissionFactor),
+      quantity: parseNum(e.quantityKg),
+    }));
 }
