@@ -39,7 +39,7 @@ export default function HomeScreen() {
               <Text style={styles.eyebrow}>Accueil</Text>
               <Text style={styles.title}>Tableau de bord carbone</Text>
               <Text style={styles.subtitle}>
-                Vue d’ensemble des KPI, répartition construction / exploitation et dernier diagnostic.
+                Vue d’ensemble des KPI, répartition construction/exploitation et dernier diagnostic.
               </Text>
             </View>
           </View>
@@ -52,7 +52,7 @@ export default function HomeScreen() {
                 <View style={styles.heroIcon}><ShieldCheck color={theme.colors.textOnDark} size={20} /></View>
                 <View>
                   <Text style={styles.heroLabel}>Session active</Text>
-                  <Text style={styles.heroValue}>{sessionUser?.organization ?? 'Mode démo'}</Text>
+                  <Text style={styles.heroValue}>{sessionUser?.organization || sessionUser?.email || '—'}</Text>
                 </View>
               </View>
             </View>
@@ -140,9 +140,12 @@ export default function HomeScreen() {
             title="Méthodologie de calcul"
             subtitle="Résumé des indicateurs affichés"
           >
-            <Text style={styles.helpText}>CO2 total = construction + exploitation.</Text>
-            <Text style={styles.helpText}>CO2 / m2 = intensité surfacique du site.</Text>
-            <Text style={styles.helpText}>CO2 / employé = intensité humaine pour comparer les sites.</Text>
+            <Text style={styles.helpText}>CO₂ total = construction + exploitation</Text>
+            <Text style={styles.helpText}>Construction = Σ (quantité matériau × facteur émission Base Carbone®)</Text>
+            <Text style={styles.helpText}>Exploitation = énergie + parking + employés + postes de travail + surface</Text>
+            <Text style={styles.helpText}>CO₂ / m² = CO₂ total ÷ surface du site (m²) — intensité surfacique</Text>
+            <Text style={styles.helpText}>CO₂ / employé = CO₂ total ÷ nombre employés — intensité humaine pour comparer les sites</Text>
+            <Text style={styles.helpText}>CO₂ / poste de travail = CO₂ total ÷ nombre de postes de travail</Text>
           </Accordion>
         </ScrollView>
       </SafeAreaView>

@@ -165,6 +165,19 @@ export async function listMaterials(token: string) {
   return parseResponse<MaterialApiResponse[]>(response);
 }
 
+export async function createMaterial(
+  token: string,
+  payload: { name: string; emissionFactor: number; unit: string }
+) {
+  const response = await fetch(buildUrl('/materials'), {
+    method: 'POST',
+    headers: buildHeaders(token),
+    body: JSON.stringify(payload),
+  });
+
+  return parseResponse<MaterialApiResponse>(response);
+}
+
 export async function addSiteMaterial(
   token: string,
   siteId: number,

@@ -12,13 +12,19 @@ const queryClient = new QueryClient();
 
 function RootLayoutNav() {
   return (
-    <Stack screenOptions={{ headerBackTitle: 'Retour', headerShadowVisible: false }}>
+    <Stack
+      screenOptions={{
+        headerBackTitle: 'Retour',
+        headerShadowVisible: false,
+        headerShown: true,
+      }}
+    >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="login" options={{ title: 'Connexion' }} />
-      <Stack.Screen name="register" options={{ title: 'Inscription' }} />
-      <Stack.Screen name="site/new" options={{ title: 'Nouveau diagnostic' }} />
-      <Stack.Screen name="site/edit/[id]" options={{ title: 'Modifier le site' }} />
-      <Stack.Screen name="site/[id]" options={{ title: 'Détail du site' }} />
+      <Stack.Screen name="login" options={{ title: 'Connexion', headerShown: true }} />
+      <Stack.Screen name="register" options={{ title: 'Inscription', headerShown: true }} />
+      <Stack.Screen name="site/new" options={{ title: 'Nouveau diagnostic', headerShown: true }} />
+      <Stack.Screen name="site/edit/[id]" options={{ title: 'Modifier le site', headerShown: true }} />
+      <Stack.Screen name="site/[id]" options={{ title: 'Détail du site', headerShown: true }} />
     </Stack>
   );
 }

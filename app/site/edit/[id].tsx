@@ -107,8 +107,16 @@ export default function EditSiteScreen() {
                   { label: 'Agence locale', value: 'branch' },
                 ]}
               />
-              <InputField label="Nom du site" value={form.name} onChangeText={(v) => setField('name', v)} placeholder="Capgemini Rennes" testId="site-name-input" />
-              <InputField label="Localisation" value={form.location} onChangeText={(v) => setField('location', v)} placeholder="Rennes" testId="site-location-input" />
+              <InputField label="Nom du site" value={form.name} onChangeText={(v) => setField('name', v)} placeholder="Ex. Mon site" testId="site-name-input" />
+              <InputField label="Adresse" value={form.address} onChangeText={(v) => setField('address', v)} placeholder="Ex. 123 rue de la Paix" testId="site-address-input" />
+              <View style={styles.row}>
+                <View style={styles.half}>
+                  <InputField label="Code postal" value={form.postalCode} onChangeText={(v) => setField('postalCode', v)} keyboardType="numeric" placeholder="35000" testId="site-postal-code-input" />
+                </View>
+                <View style={styles.half}>
+                  <InputField label="Ville" value={form.city} onChangeText={(v) => setField('city', v)} placeholder="Ex. Rennes" testId="site-city-input" />
+                </View>
+              </View>
               <InputField label="Surface totale (m²)" value={form.areaM2} onChangeText={(v) => setField('areaM2', v)} keyboardType="numeric" placeholder="11771" testId="site-area-input" />
               <InputField label="Places de parking" value={form.parkingSpaces} onChangeText={(v) => setField('parkingSpaces', v)} keyboardType="numeric" placeholder="220" testId="site-parking-input" />
               <InputField label="Consommation énergétique annuelle (MWh)" value={form.annualEnergyMwh} onChangeText={(v) => setField('annualEnergyMwh', v)} keyboardType="numeric" placeholder="1840" testId="site-energy-input" />
@@ -167,6 +175,8 @@ const styles = StyleSheet.create({
   previewFoot: { color: 'rgba(246,243,236,0.74)', fontSize: 13, lineHeight: 20 },
   cardTitle: { color: theme.colors.text, fontSize: 20, fontWeight: '800', marginBottom: 16 },
   formGroup: { gap: 14 },
+  row: { flexDirection: 'row', gap: 12 },
+  half: { flex: 1 },
   materialsHeader: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   materialsIcon: {
     width: 40,
