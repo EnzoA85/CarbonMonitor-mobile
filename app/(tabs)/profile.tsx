@@ -32,10 +32,6 @@ export default function ProfileScreen() {
               <View style={styles.avatar}>
                 <User color={theme.colors.textOnDark} size={28} />
               </View>
-              <View style={styles.badge}>
-                <ShieldCheck color={theme.colors.textOnDark} size={14} />
-                <Text style={styles.badgeText}>JWT sécurisé</Text>
-              </View>
             </View>
             <View style={styles.infoRow}>
               <Mail color="rgba(246,243,236,0.8)" size={18} />

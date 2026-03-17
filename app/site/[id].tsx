@@ -1,18 +1,45 @@
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { Building2, Factory, HardHat, Ruler, Users } from 'lucide-react-native';
-import { useEffect } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Building2, Factory, HardHat, Ruler, Trash2, Users } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { MetricCard, PremiumCard, ScreenBackground, SectionTitle, SiteMetaRow } from '@/ui';
+import { MetricCard, PremiumCard, PrimaryButton, ScreenBackground, SectionTitle, SiteMetaRow } from '@/ui';
 import { theme } from '@/constants/theme';
 import { useAppState } from '@/providers/app-provider';
 import { formatDate, formatKg, formatTonnes } from '@/utils/format';
 
 export default function SiteDetailScreen() {
   const params = useLocalSearchParams<{ id: string }>();
-  const { isHydrated, sessionUser, sites } = useAppState();
+  const { isHydrated, sessionUser, sites, deleteSite } = useAppState();
+  const [deleting, setDeleting] = useState(false);
 
   const site = sites.find((item) => item.id === params.id) ?? null;
+
+  const handleDelete = () => {
+    if (!site) return;
+    Alert.alert(
+      'Supprimer le site',
+      `Êtes-vous sûr de vouloir supprimer « ${site.name} » ?`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setDeleting(true);
+              await deleteSite(site.id);
+              router.replace('/sites' as const);
+            } catch {
+              Alert.alert('Erreur', 'Impossible de supprimer le site.');
+            } finally {
+              setDeleting(false);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   useEffect(() => {
     if (isHydrated && !sessionUser) {
@@ -72,6 +99,14 @@ export default function SiteDetailScreen() {
             <View style={styles.materialRow}><Text style={styles.materialLabel}>Bois</Text><Text style={styles.materialValue}>{site.input.materials.wood} t</Text></View>
           </View>
         </PremiumCard>
+
+        <View style={styles.actions}>
+          <PrimaryButton label="Modifier" onPress={() => router.push(`/site/edit/${site.id}` as const)} variant="secondary" testId="edit-site-button" />
+          <Pressable onPress={handleDelete} disabled={deleting} style={styles.deleteBtn}>
+            <Trash2 color={theme.colors.danger} size={18} />
+            <Text style={styles.deleteBtnText}>Supprimer</Text>
+          </Pressable>
+        </View>
       </ScrollView>
     </ScreenBackground>
   );
@@ -174,5 +209,26 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     fontSize: 15,
     fontWeight: '800',
+  },
+  actions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  deleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 16,
+    backgroundColor: 'rgba(162,76,63,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(162,76,63,0.3)',
+  },
+  deleteBtnText: {
+    color: theme.colors.danger,
+    fontSize: 15,
+    fontWeight: '700',
   },
 });

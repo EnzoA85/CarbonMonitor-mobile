@@ -96,6 +96,16 @@ export async function login(payload: { email: string; password: string }) {
   return parseResponse<AuthApiResponse>(response);
 }
 
+export async function register(payload: { email: string; password: string }) {
+  const response = await fetch(buildUrl('/auth/register'), {
+    method: 'POST',
+    headers: buildHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  return parseResponse<AuthApiResponse>(response);
+}
+
 export async function getCurrentUser(token: string) {
   const response = await fetch(buildUrl('/auth/me'), {
     method: 'GET',
@@ -122,6 +132,28 @@ export async function createSite(token: string, payload: SiteCreatePayload) {
   });
 
   return parseResponse<SiteApiResponse>(response);
+}
+
+export async function updateSite(token: string, siteId: number, payload: SiteCreatePayload) {
+  const response = await fetch(buildUrl(`/sites/${siteId}`), {
+    method: 'PUT',
+    headers: buildHeaders(token),
+    body: JSON.stringify(payload),
+  });
+
+  return parseResponse<SiteApiResponse>(response);
+}
+
+export async function deleteSite(token: string, siteId: number) {
+  const response = await fetch(buildUrl(`/sites/${siteId}`), {
+    method: 'DELETE',
+    headers: buildHeaders(token),
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`API ${response.status}: ${text || response.statusText}`);
+  }
 }
 
 export async function listMaterials(token: string) {

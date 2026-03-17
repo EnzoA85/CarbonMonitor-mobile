@@ -10,6 +10,7 @@ export {
   SiteMetaRow,
 } from '@/ui/card';
 export { AlertBanner } from '@/ui/alert';
+export { SimpleBarChart } from '@/ui/chart';
 export { Accordion } from '@/ui/accordion';
 export { AppModal } from '@/ui/modal';
 export { SelectField } from '@/ui/select';

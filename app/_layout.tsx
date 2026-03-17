@@ -15,7 +15,9 @@ function RootLayoutNav() {
     <Stack screenOptions={{ headerBackTitle: 'Retour', headerShadowVisible: false }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="login" options={{ title: 'Connexion' }} />
+      <Stack.Screen name="register" options={{ title: 'Inscription' }} />
       <Stack.Screen name="site/new" options={{ title: 'Nouveau diagnostic' }} />
+      <Stack.Screen name="site/edit/[id]" options={{ title: 'Modifier le site' }} />
       <Stack.Screen name="site/[id]" options={{ title: 'Détail du site' }} />
     </Stack>
   );
