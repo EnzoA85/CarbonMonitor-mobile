@@ -55,7 +55,7 @@ export interface MaterialApiResponse {
   id: number;
   name: string;
   emissionFactor: number;
-  unit: string;
+  unit?: string;
 }
 
 export interface SiteMaterialApiResponse {

@@ -6,7 +6,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import * as api from '@/services/api';
 import {
   newSiteFormToCreatePayload,
-  newSiteFormToCustomMaterialEntries,
   newSiteFormToFallbackMaterialEntries,
   newSiteFormToMaterialPayloads,
   toSiteCreatePayload,
@@ -194,7 +193,6 @@ export const [AppProvider, useAppState] = createContextHook(() => {
 
       const standardPayloads = newSiteFormToMaterialPayloads(values, catalog);
       const fallbackEntries = newSiteFormToFallbackMaterialEntries(values);
-      const customEntries = newSiteFormToCustomMaterialEntries(values);
 
       for (const p of standardPayloads) {
         await api.addSiteMaterial(sessionUser.token, createdSite.id, {
@@ -212,18 +210,6 @@ export const [AppProvider, useAppState] = createContextHook(() => {
         await api.addSiteMaterial(sessionUser.token, createdSite.id, {
           materialId: newMaterial.id,
           quantity: fallback.quantity,
-        });
-      }
-
-      for (const custom of customEntries) {
-        const newMaterial = await api.createMaterial(sessionUser.token, {
-          name: custom.name,
-          emissionFactor: custom.emissionFactor,
-          unit: 'kg',
-        });
-        await api.addSiteMaterial(sessionUser.token, createdSite.id, {
-          materialId: newMaterial.id,
-          quantity: custom.quantity,
         });
       }
 
@@ -266,7 +252,6 @@ export const [AppProvider, useAppState] = createContextHook(() => {
       const catalog = await api.listMaterials(sessionUser.token).catch(() => []);
       const standardPayloads = newSiteFormToMaterialPayloads(values, catalog);
       const fallbackEntries = newSiteFormToFallbackMaterialEntries(values);
-      const customEntries = newSiteFormToCustomMaterialEntries(values);
 
       for (const p of standardPayloads) {
         await api.addSiteMaterial(sessionUser.token, id, { materialId: p.materialId, quantity: p.quantity });
@@ -278,14 +263,6 @@ export const [AppProvider, useAppState] = createContextHook(() => {
           unit: 'kg',
         });
         await api.addSiteMaterial(sessionUser.token, id, { materialId: newMaterial.id, quantity: fallback.quantity });
-      }
-      for (const custom of customEntries) {
-        const newMaterial = await api.createMaterial(sessionUser.token, {
-          name: custom.name,
-          emissionFactor: custom.emissionFactor,
-          unit: 'kg',
-        });
-        await api.addSiteMaterial(sessionUser.token, id, { materialId: newMaterial.id, quantity: custom.quantity });
       }
 
       await api.calculateSite(sessionUser.token, id).catch(() => null);

@@ -19,7 +19,7 @@ export default function EditSiteScreen() {
   const [form, setForm] = useState<NewSiteFormValues | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { availableMaterials, materialOptions } = useMaterialCatalog(sessionUser?.token);
+  const { availableMaterials, materialOptions, materialById } = useMaterialCatalog(sessionUser?.token);
 
   useEffect(() => {
     if (isHydrated && !sessionUser) {
@@ -234,6 +234,7 @@ export default function EditSiteScreen() {
             <MaterialsSection
               materials={form.materials}
               materialOptions={materialOptions}
+              materialById={materialById}
               onMaterialEntryChange={setMaterialEntry}
               onAddMaterial={addMaterial}
               onRemoveMaterial={removeMaterial}

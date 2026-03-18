@@ -78,13 +78,13 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   legendLabel: {
-    color: theme.colors.textMuted,
+    color: 'rgba(246,243,236,0.75)',
     fontSize: 13,
     fontWeight: '600',
     flex: 1,
   },
   legendValue: {
-    color: theme.colors.text,
+    color: theme.colors.textOnDark,
     fontSize: 13,
     fontWeight: '800',
   },
