@@ -9,7 +9,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { FALLBACK_MATERIALS } from '@/constants/base-carbone-materials';
 import { theme } from '@/constants/theme';
 import * as api from '@/services/api';
-import { MATERIAL_OTHER, type MaterialFormEntry } from '@/types/site';
+import { type MaterialFormEntry } from '@/types/site';
 import { InputField, SelectField } from '@/ui';
 
 export function useMaterialCatalog(token: string | undefined) {
@@ -22,18 +22,21 @@ export function useMaterialCatalog(token: string | undefined) {
 
   const availableMaterials = materials.length > 0 ? materials : FALLBACK_MATERIALS;
 
+  const materialById = useMemo(() => {
+    return new Map(availableMaterials.map((m) => [String(m.id), m]));
+  }, [availableMaterials]);
+
   const materialOptions = useMemo(
     () => [
       ...availableMaterials.map((m) => ({
-        label: `${m.name} (${m.emissionFactor.toFixed(2)} kgCO₂e/kg)`,
+        label: `${m.name} (${m.emissionFactor.toFixed(3)} kgCO₂e/${m.unit || 'kg'})`,
         value: String(m.id),
       })),
-      { label: 'Autre (saisie personnalisée)', value: MATERIAL_OTHER },
     ],
     [availableMaterials]
   );
 
-  return { availableMaterials, materialOptions };
+  return { availableMaterials, materialOptions, materialById };
 }
 
 export function genMaterialId() {
@@ -43,10 +46,9 @@ export function genMaterialId() {
 export interface MaterialRowProps {
   entry: MaterialFormEntry;
   options: { label: string; value: string }[];
+  materialById: Map<string, api.MaterialApiResponse>;
   onMaterialChange: (v: string) => void;
   onQuantityChange: (v: string) => void;
-  onCustomNameChange: (v: string) => void;
-  onCustomFactorChange: (v: string) => void;
   onRemove: () => void;
   canRemove: boolean;
 }
@@ -54,14 +56,14 @@ export interface MaterialRowProps {
 export function MaterialRow({
   entry,
   options,
+  materialById,
   onMaterialChange,
   onQuantityChange,
-  onCustomNameChange,
-  onCustomFactorChange,
   onRemove,
   canRemove,
 }: MaterialRowProps) {
-  const isOther = entry.materialId === MATERIAL_OTHER;
+  const selected = entry.materialId ? materialById.get(entry.materialId) : undefined;
+  const quantityUnit = selected?.unit || 'kg';
 
   return (
     <View style={styles.materialRow}>
@@ -73,11 +75,13 @@ export function MaterialRow({
             options={options}
             onChange={onMaterialChange}
             placeholder="Sélectionner"
+            searchable
+            maxVisibleOptions={5}
           />
         </View>
         <View style={styles.materialQty}>
           <InputField
-            label="Quantité (kg)"
+            label={`Quantité (${quantityUnit})`}
             value={entry.quantityKg}
             onChangeText={onQuantityChange}
             keyboardType="numeric"
@@ -86,28 +90,6 @@ export function MaterialRow({
           />
         </View>
       </View>
-      {isOther && (
-        <View style={styles.customMaterialFields}>
-          <InputField
-            label="Nom du matériau"
-            value={entry.customMaterialName ?? ''}
-            onChangeText={onCustomNameChange}
-            placeholder="Ex. Fibre de carbone"
-            testId={`material-custom-name-${entry.id}`}
-          />
-          <InputField
-            label="Facteur d'émission (kgCO₂e/kg) *"
-            value={entry.customEmissionFactor ?? ''}
-            onChangeText={onCustomFactorChange}
-            keyboardType="numeric"
-            placeholder="Consulter Base Carbone®"
-            testId={`material-custom-factor-${entry.id}`}
-          />
-          <Text style={styles.baseCarboneHint}>
-            Base Carbone® : data.ademe.fr/datasets/base-carboner/full
-          </Text>
-        </View>
-      )}
       {canRemove && (
         <Pressable style={styles.removeBtn} onPress={onRemove}>
           <Trash2 color={theme.colors.textMuted} size={18} />
@@ -120,6 +102,7 @@ export function MaterialRow({
 export interface MaterialsSectionProps {
   materials: MaterialFormEntry[];
   materialOptions: { label: string; value: string }[];
+  materialById: Map<string, api.MaterialApiResponse>;
   onMaterialEntryChange: (entryId: string, field: keyof MaterialFormEntry, value: string) => void;
   onAddMaterial: () => void;
   onRemoveMaterial: (entryId: string) => void;
@@ -128,6 +111,7 @@ export interface MaterialsSectionProps {
 export function MaterialsSection({
   materials,
   materialOptions,
+  materialById,
   onMaterialEntryChange,
   onAddMaterial,
   onRemoveMaterial,
@@ -152,10 +136,9 @@ export function MaterialsSection({
             key={entry.id}
             entry={entry}
             options={materialOptions}
+            materialById={materialById}
             onMaterialChange={(v) => onMaterialEntryChange(entry.id, 'materialId', v)}
             onQuantityChange={(v) => onMaterialEntryChange(entry.id, 'quantityKg', v)}
-            onCustomNameChange={(v) => onMaterialEntryChange(entry.id, 'customMaterialName', v)}
-            onCustomFactorChange={(v) => onMaterialEntryChange(entry.id, 'customEmissionFactor', v)}
             onRemove={() => onRemoveMaterial(entry.id)}
             canRemove={materials.length > 1}
           />

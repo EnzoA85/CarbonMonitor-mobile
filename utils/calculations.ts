@@ -5,7 +5,6 @@
  * getSiteReport, getSiteMaterials et CarbonResultResponse.
  */
 import type { MaterialApiResponse } from '@/services/api';
-import { MATERIAL_OTHER } from '@/types/site';
 import {
   EMPLOYEE_FACTOR,
   ENERGY_EMISSION_FACTORS,
@@ -131,12 +130,7 @@ export function calculateNewSiteMetrics(
   const materialMap = new Map(catalog.map((m) => [m.id, m.emissionFactor]));
   const constructionKgCo2e = values.materials.reduce((acc, e) => {
     const qty = parseNumber(e.quantityKg);
-    let factor: number;
-    if (e.materialId === MATERIAL_OTHER && e.customEmissionFactor != null) {
-      factor = parseNumber(e.customEmissionFactor);
-    } else {
-      factor = materialMap.get(Number(e.materialId)) ?? 0;
-    }
+    const factor = materialMap.get(Number(e.materialId)) ?? 0;
     return acc + qty * factor;
   }, 0);
 

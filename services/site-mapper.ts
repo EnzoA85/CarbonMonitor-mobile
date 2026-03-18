@@ -1,6 +1,5 @@
-import { FALLBACK_MATERIALS } from '@/constants/base-carbone-materials';
 import type { NewSiteFormValues, SiteMetrics, SiteRecord } from '@/types/site';
-import { MATERIAL_OTHER } from '@/types/site';
+import { FALLBACK_MATERIALS } from '@/constants/base-carbone-materials';
 import type { CarbonResultApiResponse, MaterialApiResponse, SiteApiResponse, SiteMaterialApiResponse } from '@/services/api';
 
 function round(value: number, digits = 2) {
@@ -133,7 +132,7 @@ export function newSiteFormToMaterialPayloads(
 ): { materialId: number; quantity: number }[] {
   const catalogIds = new Set(catalog.map((m) => m.id));
   return values.materials
-    .filter((e) => e.materialId && e.materialId !== MATERIAL_OTHER && parseNum(e.quantityKg) > 0)
+    .filter((e) => e.materialId && parseNum(e.quantityKg) > 0)
     .map((e) => ({
       materialId: Number(e.materialId),
       quantity: parseNum(e.quantityKg),
@@ -163,23 +162,4 @@ export function newSiteFormToFallbackMaterialEntries(values: NewSiteFormValues):
     });
 }
 
-/** Entrées "Autre" à créer via API avant d'ajouter au site */
-export function newSiteFormToCustomMaterialEntries(values: NewSiteFormValues): {
-  name: string;
-  emissionFactor: number;
-  quantity: number;
-}[] {
-  return values.materials
-    .filter(
-      (e) =>
-        e.materialId === MATERIAL_OTHER &&
-        (e.customMaterialName ?? '').trim() &&
-        parseNum(e.customEmissionFactor) > 0 &&
-        parseNum(e.quantityKg) > 0
-    )
-    .map((e) => ({
-      name: (e.customMaterialName ?? '').trim(),
-      emissionFactor: parseNum(e.customEmissionFactor),
-      quantity: parseNum(e.quantityKg),
-    }));
-}
+// Note: la saisie de matériaux personnalisés ("Autre") a été retirée de l'app.
