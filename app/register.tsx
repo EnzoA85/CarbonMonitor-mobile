@@ -58,7 +58,7 @@ export default function RegisterScreen() {
               <View style={styles.heroBadge}>
                 <UserPlus color={theme.colors.textOnDark} size={22} />
               </View>
-              <Text style={styles.eyebrow}>Créer un compte</Text>
+              <Text style={styles.eyebrow}>CarbonMonitor</Text>
               <Text style={styles.title}>Inscription</Text>
               <Text style={styles.subtitle}>
                 Créez votre compte pour accéder aux diagnostics carbone et piloter vos sites.

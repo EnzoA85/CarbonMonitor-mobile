@@ -49,7 +49,7 @@ export default function LoginScreen() {
               <View style={styles.heroBadge}>
                 <ShieldCheck color={theme.colors.textOnDark} size={22} />
               </View>
-              <Text style={styles.eyebrow}>CapCarbon</Text>
+              <Text style={styles.eyebrow}>CarbonMonitor</Text>
               <Text style={styles.title}>Pilotage carbone terrain</Text>
               <Text style={styles.subtitle}>
                 Connectez-vous pour créer des diagnostics, suivre vos KPI et piloter vos émissions.
